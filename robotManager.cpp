@@ -44,6 +44,11 @@ robotManager::robotManager( int* argc, char** argv) :
 
     my_isClienRunning = true;
 
+    // Enable verbose mode
+    my_requestsHandler->enableVerboseMode();
+    my_steeringManager->enableVerboseMode();
+    my_cameraManager->enableVerboseMode();
+
     //client.logDataList();
     //client.findCommandFromName("listCommands");
 }
@@ -79,6 +84,7 @@ bool robotManager::isClientRunning()
 
 robotManager::requestsHandler::requestsHandler( ArClientBase* _client) :
     my_client( _client ),
+    my_verboseMode( false ),
     my_functor_handle_updateNumbers(this, &robotManager::requestsHandler::handle_updateNumbers),
     my_functor_handle_getSensorList(this, &robotManager::requestsHandler::handle_getSensorList),
     my_functor_handle_getSensorCurrent(this, &robotManager::requestsHandler::handle_getSensorCurrent)
@@ -105,10 +111,13 @@ void robotManager::requestsHandler::handle_updateNumbers(ArNetPacket* packet)
     packet->bufToByte2(); // Skip lateralVelocity
     my_temperatur = (double) packet->bufToByte();
 
-    printf("%3.2f|%6.2f|%6.2f|%6.2f|%6.2f|%6.2f|%6.2f\n", my_batteryVoltage, my_xPosition,
-           my_yPosition, my_theta, my_velocity, my_rotationalVelocity,
-           my_temperatur);
-    fflush(stdout);
+    if (my_verboseMode)
+    {
+        printf("%3.2f|%6.2f|%6.2f|%6.2f|%6.2f|%6.2f|%6.2f\n", my_batteryVoltage, my_xPosition,
+               my_yPosition, my_theta, my_velocity, my_rotationalVelocity,
+               my_temperatur);
+        fflush(stdout);
+    }
 }
 
 void robotManager::requestsHandler::handle_getSensorList( ArNetPacket* packet )
@@ -122,8 +131,11 @@ void robotManager::requestsHandler::handle_getSensorList( ArNetPacket* packet )
         packet->bufToStr( sensorName, sizeof( sensorName ));
     }
 
-    printf("SENSORS: %3d => (1) %20s\n", numberOfSensors, sensorName );
-    fflush(stdout);
+    if (my_verboseMode)
+    {
+        printf("SENSORS: %3d => (1) %20s\n", numberOfSensors, sensorName );
+        fflush(stdout);
+    }
 
     // Start reading data from laser reading (or the first radar received information about)
     ArNetPacket* request_name_packet = new ArNetPacket();
@@ -148,14 +160,22 @@ void robotManager::requestsHandler::handle_getSensorCurrent( ArNetPacket* packet
     {
         reading_laser[i] = std::make_pair( packet->bufToByte4(), packet->bufToByte4());
     }
-    //printf("READING (%d): (%6d, %6d)\n", 0, reading_laser[-(numberOfReadings - 1)/ 2].first, reading_laser[0].second);
-    fflush(stdout);
+    if( my_verboseMode )
+    {
+        printf("READING (%d): (%6d, %6d)\n", 0, reading_laser[-(numberOfReadings - 1)/ 2].first, reading_laser[0].second);
+        fflush(stdout);
+    }
+}
+
+void robotManager::requestsHandler::enableVerboseMode()
+{
+    my_verboseMode = true;
 }
 
 robotManager::steeringManager::steeringManager( ArClientBase *_client,
         ArKeyHandler *_keyHandler, bool _activateKeySteering) :
-    my_keySteeringActiveStatus( false ), my_isRunningByKeys( false ),
-    my_isVelocitySteering( false ),
+    my_verboseMode( false ), my_keySteeringActiveStatus( false ),
+    my_isRunningByKeys( false ), my_isVelocitySteering( false ),
     VEL_PERC( 50 ), my_velThrottle(0), my_rotThrottle(0),
     my_client( _client ), my_keyHandler( _keyHandler ), my_clientRatioDrive( my_client ),
     my_functor_handle_key_up( this, &robotManager::steeringManager::handle_key_up),
@@ -168,9 +188,7 @@ robotManager::steeringManager::steeringManager( ArClientBase *_client,
     if ( _activateKeySteering )
         activateKeySteering();
 
-    my_clientRatioDrive.unsafeDrive(); // SET UNSAFE DRIVA AS DEFAULT MODE
-    //turnByAngle( 30 );
-
+    my_clientRatioDrive.unsafeDrive(); // SET UNSAFE DRIVE AS DEFAULT MODE
 }
 
 void robotManager::steeringManager::handle_key_up()
@@ -357,6 +375,11 @@ void robotManager::steeringManager::enableVelocitySteering()
     my_isVelocitySteering = true;
 }
 
+void robotManager::steeringManager::enableVerboseMode()
+{
+    my_verboseMode = true;
+}
+
 robotManager::cameraManager::cameraManager( ArClientBase* _client, ArKeyHandler* _keyHandler ) :
     my_sendVideoDelay( 100 ), my_video_mutexOn(false),
     my_recordToFolder( false ), my_cameraSteeringActiveStatus( false ),
@@ -457,8 +480,11 @@ void robotManager::cameraManager::handle_snapshot( ArNetPacket* packet )
     if( my_recordToFolder )
         recordFrame( my_lastSnap, my_lastSnapSize );
 
-    printf("Snap: %d | %d | %d\n", width, height, my_lastSnapSize);
-    fflush(stdout);
+    if (my_verboseMode)
+    {
+        printf("Snap: %d | %d | %d\n", width, height, my_lastSnapSize);
+        fflush(stdout);
+    }
 }
 
 void robotManager::cameraManager::handle_getCameraInfoCamera_1( ArNetPacket* packet )
@@ -471,7 +497,9 @@ void robotManager::cameraManager::handle_getCameraInfoCamera_1( ArNetPacket* pac
     my_camera_maxZoom = (int) packet->bufToByte2();
     my_camera_isZoomAvailable = (bool) packet->bufToByte();
 
-    printf("## Camera parameters:\n\
+    if( my_verboseMode )
+    {
+        printf("## Camera parameters:\n\
 # min Pan: %d\n\
 # max Pan: %d\n\
 # min Tilt: %d\n\
@@ -479,8 +507,10 @@ void robotManager::cameraManager::handle_getCameraInfoCamera_1( ArNetPacket* pac
 # min Zoom: %d\n\
 # max Zoom: %d\n\
 ##\n", my_camera_minPan, my_camera_maxPan,
-           my_camera_minTilt, my_camera_maxTilt,
-           my_camera_minZoom, my_camera_maxZoom);
+               my_camera_minTilt, my_camera_maxTilt,
+               my_camera_minZoom, my_camera_maxZoom);
+        fflush(stdout);
+    }
 }
 
 void robotManager::cameraManager::handle_getCameraDataCamera_1( ArNetPacket* packet )
@@ -489,11 +519,15 @@ void robotManager::cameraManager::handle_getCameraDataCamera_1( ArNetPacket* pac
     my_camera_tilt = (int) packet->bufToByte2();
     my_camera_zoom = (int) packet->bufToByte2();
 
-    printf("## Camera position:\n\
+    if (my_verboseMode)
+    {
+        printf("## Camera position:\n\
 # Pan: %d\n\
 # Tilt: %d\n\
 # Zoom: %d\n\
 ##\n", my_camera_pan, my_camera_tilt, my_camera_zoom);
+        fflush(stdout);
+    }
 }
 
 void robotManager::cameraManager::handle_setCameraAbsCamera_1(int pan, int tilt, int zoom)
@@ -598,42 +632,55 @@ void robotManager::cameraManager::thread_checkKeys()
     }
 }
 
-void robotManager::cameraManager::handle_key_w() {
+void robotManager::cameraManager::handle_key_w()
+{
     // UP by 1 degree
     handle_setCameraRelCamera_1(0, 1 * 100, 0);
 }
 
-void robotManager::cameraManager::handle_key_s() {
+void robotManager::cameraManager::handle_key_s()
+{
     // DOWN by 1 degree
     handle_setCameraRelCamera_1(0, -1 * 100, 0);
 }
 
-void robotManager::cameraManager::handle_key_a() {
+void robotManager::cameraManager::handle_key_a()
+{
     // LEFT by 1 degree
     handle_setCameraRelCamera_1(1 * 100, 0, 0);
 }
 
-void robotManager::cameraManager::handle_key_d() {
+void robotManager::cameraManager::handle_key_d()
+{
     // RIGHT by 1 degree
     handle_setCameraRelCamera_1(-1 * 100, 0, 0);
 }
 
-void robotManager::cameraManager::handle_key_r() {
+void robotManager::cameraManager::handle_key_r()
+{
     // Add 1% zoom
     handle_setCameraRelCamera_1(0, 0, 1 * 100);
 }
 
-void robotManager::cameraManager::handle_key_f() {
+void robotManager::cameraManager::handle_key_f()
+{
     // Add -1% zoom
     handle_setCameraRelCamera_1(0, 0, -1 * 100);
 }
 
-int robotManager::cameraManager::getSendVideoDelay() {
+int robotManager::cameraManager::getSendVideoDelay()
+{
     return my_sendVideoDelay;
 }
 
-std::pair<unsigned char*, int> robotManager::cameraManager::getSendVideoFrame() {
+std::pair<unsigned char*, int> robotManager::cameraManager::getSendVideoFrame()
+{
     while( my_video_mutexOn )
         ArUtil::sleep( 2 );
     return std::make_pair( my_lastSnap, my_lastSnapSize);
+}
+
+void robotManager::cameraManager::enableVerboseMode()
+{
+    my_verboseMode = true;
 }

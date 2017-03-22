@@ -19,6 +19,7 @@ private:
     {
     public:
         requestsHandler( ArClientBase *_client );
+        void enableVerboseMode();
 
     protected:
         double my_batteryVoltage,
@@ -28,6 +29,8 @@ private:
                my_temperatur;
 
         ArClientBase* my_client;
+
+        bool my_verboseMode;
 
 //    CALLBACKS FUNCTIONS
         void handle_updateNumbers( ArNetPacket *packet );
@@ -56,10 +59,14 @@ private:
         int getSendVideoDelay();
         std::pair<unsigned char*, int> getSendVideoFrame();
 
+        void enableVerboseMode();
+
     private:
         char my_cameraName[255], my_cameraType[255],
              my_cameraNameForUserDisplay[255],
              my_cameraTypeForUserDisplay[255];
+
+        bool my_verboseMode;
 
         // Camera parameters
         int my_camera_minPan, my_camera_maxPan;
@@ -134,7 +141,7 @@ private:
     {
     public:
         steeringManager( ArClientBase *_client, ArKeyHandler *_keyHandler,
-                        bool _activateKeySteering = true);
+                         bool _activateKeySteering = true);
 
         void moveDistance( double distance_mm );
         void turnByAngle( double angle_deg );
@@ -143,8 +150,10 @@ private:
         void enableVelocitySteering();
         void enableDistSteering();
 
+        void enableVerboseMode();
+
     private:
-        bool my_keySteeringActiveStatus,
+        bool my_verboseMode, my_keySteeringActiveStatus,
              my_isRunningByKeys, my_isVelocitySteering;
 
         const int VEL_PERC;
