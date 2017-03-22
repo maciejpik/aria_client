@@ -51,9 +51,12 @@ private:
         void turnByAngle( double angle_deg );
         void turnToHeading( double angle_deg );
 
+        void enableVelocitySteering();
+        void enableDistSteering();
+
     private:
         bool my_keySteeringActiveStatus,
-        my_isRunningByKeys;
+        my_isRunningByKeys, my_isVelocitySteering;
 
         const int VEL_PERC;
 

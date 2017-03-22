@@ -154,6 +154,7 @@ void robotManager::requestsHandler::handle_getSensorCurrent( ArNetPacket* packet
 
 robotManager::steeringManager::steeringManager( ArClientBase *_client, ArKeyHandler *_keyHandler, bool _activateKeySteering) :
     my_keySteeringActiveStatus( false ), my_isRunningByKeys( false ),
+    my_isVelocitySteering( false ),
     VEL_PERC( 50 ), my_velThrottle(0), my_rotThrottle(0),
     my_client( _client ), my_keyHandler( _keyHandler ), my_clientRatioDrive( my_client ),
     my_functor_handle_key_up( this, &robotManager::steeringManager::handle_key_up),
@@ -173,26 +174,34 @@ robotManager::steeringManager::steeringManager( ArClientBase *_client, ArKeyHand
 
 void robotManager::steeringManager::handle_key_up()
 {
+    if( my_isVelocitySteering ) {
     my_velThrottle += 0.025; //@ThrottleKeyboardMode
     //my_clientRatioDrive.setTransVelRatio( VEL_PERC ); //@ThrottleKeyboardMode
+    } else moveDistance( 10 );
 }
 
 void robotManager::steeringManager::handle_key_down()
 {
+    if( my_isVelocitySteering ) {
     my_velThrottle -= 0.025; //@ThrottleKeyboardMode
     //my_clientRatioDrive.setTransVelRatio( -VEL_PERC ); //@ThrottleKeyboardMode
+    } else moveDistance( -10 );
 }
 
 void robotManager::steeringManager::handle_key_left()
 {
+    if( my_isVelocitySteering ) {
     my_rotThrottle += 0.1; //@ThrottleKeyboardMode
     //my_clientRatioDrive.setRotVelRatio( VEL_PERC ); //@ThrottleKeyboardMode
+    } else turnByAngle( 5 );
 }
 
 void robotManager::steeringManager::handle_key_right()
 {
+    if( my_isVelocitySteering ) {
     my_rotThrottle -= 0.1; //@ThrottleKeyboardMode
     //my_clientRatioDrive.setRotVelRatio( -VEL_PERC ); //@ThrottleKeyboardMode
+    } else turnByAngle( -5 );
 }
 
 void robotManager::steeringManager::handle_key_space()
@@ -329,6 +338,14 @@ void robotManager::steeringManager::handle_jogModeRequests(int i, double value )
     return;
 }
 
+void robotManager::steeringManager::enableDistSteering() {
+    my_isVelocitySteering = false;
+}
+
+void robotManager::steeringManager::enableVelocitySteering() {
+    my_isVelocitySteering = true;
+}
+
 robotManager::cameraManager::cameraManager( ArClientBase* _client ) :
     my_recordToFolder( false ), my_client( _client ),
     my_functor_handle_getCameraList(this, &robotManager::cameraManager::handle_getCameraList),
@@ -410,12 +427,6 @@ void robotManager::cameraManager::handle_snapshot( ArNetPacket* packet ) {
 
     if( my_recordToFolder )
         recordFrame( image, toRead );
-
-//    FILE* f = fopen("image_data.txt", "wb");
-//    fwrite(image, toRead, 1, fp2);
-////    for(int i = 0; i < toRead; i++)
-////        fprintf(f, "%c\n", image[i]);
-//    fclose(f);
 
     printf("Snap: %d | %d | %d\n", width, height, toRead); fflush(stdout);
 }
