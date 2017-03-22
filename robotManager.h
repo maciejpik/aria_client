@@ -50,6 +50,8 @@ private:
 
         // Camera steering
         void resetPosition();
+        void handle_setCameraAbsCamera_1(int pan, int tilt, int zoom);
+        void handle_setCameraRelCamera_1(int plus_pan, int plus_tilt, int plus_zoom);
 
         // Key camera steering
         void activateCameraSteering();
@@ -100,9 +102,6 @@ private:
         void recordFrame(unsigned char* image, int length_of_image );
         void startRecording();
         void stopRecording();
-
-        void handle_setCameraAbsCamera_1(int pan, int tilt, int zoom);
-        void handle_setCameraRelCamera_1(int plus_pan, int plus_tilt, int plus_zoom);
 
         // CALLBACKS FUNCTIONS
         void handle_getCameraList( ArNetPacket* packet ); // This function does
@@ -195,12 +194,12 @@ private:
     ArClientSimpleConnector clientConnector;
     ArKeyHandler keyHandler;
 
-    requestsHandler* my_requestsHandler;
-    steeringManager* my_steeringManager;
-    cameraManager* my_cameraManager;
-
     bool my_isClienRunning;
 
+public:
+    requestsHandler* requests;
+    steeringManager* steering;
+    cameraManager* camera;
 };
 
 #endif // ROBOTMANAGER_H_INCLUDED

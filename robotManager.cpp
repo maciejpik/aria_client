@@ -34,20 +34,20 @@ robotManager::robotManager( int* argc, char** argv) :
         my_isClienRunning = false;
     }
 
-    my_requestsHandler = new requestsHandler( &client );
-
     Aria::setKeyHandler( &keyHandler );
-    my_steeringManager = new steeringManager( &client, &keyHandler );
-    my_cameraManager = new cameraManager( &client, &keyHandler );
+    // Prepare nested-classes managers
+    requests = new requestsHandler( &client );
+    steering = new steeringManager( &client, &keyHandler );
+    camera = new cameraManager( &client, &keyHandler );
 
+    // Run the client
     client.runAsync();
-
     my_isClienRunning = true;
 
     // Enable verbose mode
-    my_requestsHandler->enableVerboseMode();
-    my_steeringManager->enableVerboseMode();
-    my_cameraManager->enableVerboseMode();
+    requests->enableVerboseMode();
+    steering->enableVerboseMode();
+    camera->enableVerboseMode();
 
     //client.logDataList();
     //client.findCommandFromName("listCommands");
@@ -160,11 +160,11 @@ void robotManager::requestsHandler::handle_getSensorCurrent( ArNetPacket* packet
     {
         reading_laser[i] = std::make_pair( packet->bufToByte4(), packet->bufToByte4());
     }
-    if( my_verboseMode )
-    {
-        printf("READING (%d): (%6d, %6d)\n", 0, reading_laser[-(numberOfReadings - 1)/ 2].first, reading_laser[0].second);
-        fflush(stdout);
-    }
+//    if( my_verboseMode )
+//    {
+//        printf("READING (%d): (%6d, %6d)\n", 0, reading_laser[-(numberOfReadings - 1)/ 2].first, reading_laser[0].second);
+//        fflush(stdout);
+//    }
 }
 
 void robotManager::requestsHandler::enableVerboseMode()
