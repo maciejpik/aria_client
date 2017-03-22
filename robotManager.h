@@ -20,11 +20,6 @@ private:
     public:
         requestsHandler( ArClientBase *_client );
 
-//    CALLBACKS FUNCTIONS
-        void handle_updateNumbers( ArNetPacket *packet );
-        void handle_getSensorList( ArNetPacket *packet );
-        void handle_getSensorCurrent( ArNetPacket *packet );
-
     protected:
         double my_batteryVoltage,
                my_xPosition, my_yPosition,
@@ -34,12 +29,15 @@ private:
 
         ArClientBase* my_client;
 
+//    CALLBACKS FUNCTIONS
+        void handle_updateNumbers( ArNetPacket *packet );
+        void handle_getSensorList( ArNetPacket *packet );
+        void handle_getSensorCurrent( ArNetPacket *packet );
+
 //    CALLBACKS FUNCTORS
         ArFunctor1C<requestsHandler, ArNetPacket*> my_functor_handle_updateNumbers;
         ArFunctor1C<requestsHandler, ArNetPacket*> my_functor_handle_getSensorList;
         ArFunctor1C<requestsHandler, ArNetPacket*> my_functor_handle_getSensorCurrent;
-
-        // HELP FUNCTIONS
     };
 
     class cameraManager
@@ -53,6 +51,10 @@ private:
         // Key camera steering
         void activateCameraSteering();
         void deactivateCameraSteering();
+
+        // Send video
+        int getSendVideoDelay();
+        std::pair<unsigned char*, int> getSendVideoFrame();
 
     private:
         char my_cameraName[255], my_cameraType[255],
@@ -68,6 +70,11 @@ private:
         // Current camera position
         int my_camera_pan, my_camera_tilt,
             my_camera_zoom;
+
+        // Send video
+        unsigned char my_lastSnap[38400];
+        int my_lastSnapSize, my_sendVideoDelay;
+        bool my_video_mutexOn;
 
         // Frame recording variables
         bool my_recordToFolder;
