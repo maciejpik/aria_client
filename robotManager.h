@@ -42,10 +42,92 @@ private:
         // HELP FUNCTIONS
     };
 
+    class cameraManager
+    {
+    public:
+        cameraManager( ArClientBase* _client, ArKeyHandler* _keyHandler );
+
+        // Camera steering
+        void resetPosition();
+
+        // Key camera steering
+        void activateCameraSteering();
+        void deactivateCameraSteering();
+
+    private:
+        char my_cameraName[255], my_cameraType[255],
+             my_cameraNameForUserDisplay[255],
+             my_cameraTypeForUserDisplay[255];
+
+        // Camera parameters
+        int my_camera_minPan, my_camera_maxPan;
+        int my_camera_minTilt, my_camera_maxTilt;
+        int my_camera_minZoom, my_camera_maxZoom;
+        bool my_camera_isZoomAvailable;
+
+        // Current camera position
+        int my_camera_pan, my_camera_tilt,
+            my_camera_zoom;
+
+        // Frame recording variables
+        bool my_recordToFolder;
+        int my_frame_number, my_filename_length;
+        std::string my_file_extension;
+
+        // Camera key steering
+        bool my_cameraSteeringActiveStatus;
+
+    protected:
+        ArClientBase* my_client;
+        ArKeyHandler* my_keyHandler;
+
+        ArThread my_thread_checkKeys; //ATTENTION! THIS CLASS CREATS ITS OWN THREAD
+
+        void recordFrame(unsigned char* image, int length_of_image );
+        void startRecording();
+        void stopRecording();
+
+        void handle_setCameraAbsCamera_1(int pan, int tilt, int zoom);
+        void handle_setCameraRelCamera_1(int plus_pan, int plus_tilt, int plus_zoom);
+
+        // CALLBACKS FUNCTIONS
+        void handle_getCameraList( ArNetPacket* packet ); // This function does
+        // not work properly right now with current Pioneer configuration. To
+        // consider if I still needs it.
+        void handle_snapshot( ArNetPacket* packet);
+        void handle_getCameraInfoCamera_1( ArNetPacket* packet);
+        void handle_getCameraDataCamera_1( ArNetPacket* packet);
+        // Key handling (S)
+        void handle_key_w(void);
+        void handle_key_s(void);
+        void handle_key_a(void);
+        void handle_key_d(void);
+        void handle_key_r(void);
+        void handle_key_f(void);
+        void thread_checkKeys(void);
+        // Key handling (E)
+
+        // CALBACKS FUNCTORS
+        ArFunctor1C<cameraManager, ArNetPacket*> my_functor_handle_getCameraList;
+        ArFunctor1C<cameraManager, ArNetPacket*> my_functor_handle_snapshot;
+        ArFunctor1C<cameraManager, ArNetPacket*> my_functor_handle_getCameraInfoCamera_1;
+        ArFunctor1C<cameraManager, ArNetPacket*> my_functor_hanlde_getCameraDataCamera_1;
+        // Key handling (S)
+        ArFunctorC<cameraManager> my_functor_handle_key_w;
+        ArFunctorC<cameraManager> my_functor_handle_key_s;
+        ArFunctorC<cameraManager> my_functor_handle_key_a;
+        ArFunctorC<cameraManager> my_functor_handle_key_d;
+        ArFunctorC<cameraManager> my_functor_handle_key_r;
+        ArFunctorC<cameraManager> my_functor_handle_key_f;
+        ArFunctorC<cameraManager> my_functor_thread_checkKeys;
+        // Key handling (E)
+    };
+
     class steeringManager
     {
     public:
-        steeringManager( ArClientBase *_client, ArKeyHandler *_keyHandler, bool _activateKeySteering = true);
+        steeringManager( ArClientBase *_client, ArKeyHandler *_keyHandler,
+                        bool _activateKeySteering = true);
 
         void moveDistance( double distance_mm );
         void turnByAngle( double angle_deg );
@@ -56,7 +138,7 @@ private:
 
     private:
         bool my_keySteeringActiveStatus,
-        my_isRunningByKeys, my_isVelocitySteering;
+             my_isRunningByKeys, my_isVelocitySteering;
 
         const int VEL_PERC;
 
@@ -89,59 +171,6 @@ private:
         ArFunctorC<steeringManager> my_functor_handle_key_right;
         ArFunctorC<steeringManager> my_functor_handle_key_space;
         ArFunctorC<steeringManager> my_functor_thread_checkKeys;
-    };
-
-    class cameraManager
-    {
-    public:
-        cameraManager( ArClientBase* _client );
-
-        // Camera steering
-        void resetPosition();
-
-    private:
-        char my_cameraName[255], my_cameraType[255],
-        my_cameraNameForUserDisplay[255],
-        my_cameraTypeForUserDisplay[255];
-
-        // Camera parameters
-        int my_camera_minPan, my_camera_maxPan;
-        int my_camera_minTilt, my_camera_maxTilt;
-        int my_camera_minZoom, my_camera_maxZoom;
-        bool my_camera_isZoomAvailable;
-
-        // Current camera position
-        int my_camera_pan, my_camera_tilt,
-        my_camera_zoom;
-
-        // Frame recording variables
-        bool my_recordToFolder;
-        int my_frame_number, my_filename_length;
-        std::string my_file_extension;
-
-    protected:
-        ArClientBase* my_client;
-
-        void recordFrame(unsigned char* image, int length_of_image );
-        void startRecording();
-        void stopRecording();
-
-        void handle_setCameraAbsCamera_1(int pan, int tilt, int zoom);
-        void handle_setCameraRelCamera_1(int plus_pan, int plus_tilt, int plus_zoom);
-
-        // CALLBACKS FUNCTIONS
-        void handle_getCameraList( ArNetPacket* packet ); // This function does
-        // not work properly right now with current Pioneer configuration. To
-        // consider if I still needs it.
-        void handle_snapshot( ArNetPacket* packet);
-        void handle_getCameraInfoCamera_1( ArNetPacket* packet);
-        void handle_getCameraDataCamera_1( ArNetPacket* packet);
-
-        // CALBACKS FUNCTORS
-        ArFunctor1C<cameraManager, ArNetPacket*> my_functor_handle_getCameraList;
-        ArFunctor1C<cameraManager, ArNetPacket*> my_functor_handle_snapshot;
-        ArFunctor1C<cameraManager, ArNetPacket*> my_functor_handle_getCameraInfoCamera_1;
-        ArFunctor1C<cameraManager, ArNetPacket*> my_functor_hanlde_getCameraDataCamera_1;
     };
 
 private:

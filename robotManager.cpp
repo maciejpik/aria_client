@@ -38,7 +38,7 @@ robotManager::robotManager( int* argc, char** argv) :
 
     Aria::setKeyHandler( &keyHandler );
     my_steeringManager = new steeringManager( &client, &keyHandler );
-    my_cameraManager = new cameraManager( &client );
+    my_cameraManager = new cameraManager( &client, &keyHandler );
 
     client.runAsync();
 
@@ -152,7 +152,8 @@ void robotManager::requestsHandler::handle_getSensorCurrent( ArNetPacket* packet
     fflush(stdout);
 }
 
-robotManager::steeringManager::steeringManager( ArClientBase *_client, ArKeyHandler *_keyHandler, bool _activateKeySteering) :
+robotManager::steeringManager::steeringManager( ArClientBase *_client,
+        ArKeyHandler *_keyHandler, bool _activateKeySteering) :
     my_keySteeringActiveStatus( false ), my_isRunningByKeys( false ),
     my_isVelocitySteering( false ),
     VEL_PERC( 50 ), my_velThrottle(0), my_rotThrottle(0),
@@ -174,34 +175,42 @@ robotManager::steeringManager::steeringManager( ArClientBase *_client, ArKeyHand
 
 void robotManager::steeringManager::handle_key_up()
 {
-    if( my_isVelocitySteering ) {
-    my_velThrottle += 0.025; //@ThrottleKeyboardMode
-    //my_clientRatioDrive.setTransVelRatio( VEL_PERC ); //@ThrottleKeyboardMode
-    } else moveDistance( 10 );
+    if( my_isVelocitySteering )
+    {
+        my_velThrottle += 0.025; //@ThrottleKeyboardMode
+        //my_clientRatioDrive.setTransVelRatio( VEL_PERC ); //@ThrottleKeyboardMode
+    }
+    else moveDistance( 10 );
 }
 
 void robotManager::steeringManager::handle_key_down()
 {
-    if( my_isVelocitySteering ) {
-    my_velThrottle -= 0.025; //@ThrottleKeyboardMode
-    //my_clientRatioDrive.setTransVelRatio( -VEL_PERC ); //@ThrottleKeyboardMode
-    } else moveDistance( -10 );
+    if( my_isVelocitySteering )
+    {
+        my_velThrottle -= 0.025; //@ThrottleKeyboardMode
+        //my_clientRatioDrive.setTransVelRatio( -VEL_PERC ); //@ThrottleKeyboardMode
+    }
+    else moveDistance( -10 );
 }
 
 void robotManager::steeringManager::handle_key_left()
 {
-    if( my_isVelocitySteering ) {
-    my_rotThrottle += 0.1; //@ThrottleKeyboardMode
-    //my_clientRatioDrive.setRotVelRatio( VEL_PERC ); //@ThrottleKeyboardMode
-    } else turnByAngle( 5 );
+    if( my_isVelocitySteering )
+    {
+        my_rotThrottle += 0.1; //@ThrottleKeyboardMode
+        //my_clientRatioDrive.setRotVelRatio( VEL_PERC ); //@ThrottleKeyboardMode
+    }
+    else turnByAngle( 5 );
 }
 
 void robotManager::steeringManager::handle_key_right()
 {
-    if( my_isVelocitySteering ) {
-    my_rotThrottle -= 0.1; //@ThrottleKeyboardMode
-    //my_clientRatioDrive.setRotVelRatio( -VEL_PERC ); //@ThrottleKeyboardMode
-    } else turnByAngle( -5 );
+    if( my_isVelocitySteering )
+    {
+        my_rotThrottle -= 0.1; //@ThrottleKeyboardMode
+        //my_clientRatioDrive.setRotVelRatio( -VEL_PERC ); //@ThrottleKeyboardMode
+    }
+    else turnByAngle( -5 );
 }
 
 void robotManager::steeringManager::handle_key_space()
@@ -338,44 +347,55 @@ void robotManager::steeringManager::handle_jogModeRequests(int i, double value )
     return;
 }
 
-void robotManager::steeringManager::enableDistSteering() {
+void robotManager::steeringManager::enableDistSteering()
+{
     my_isVelocitySteering = false;
 }
 
-void robotManager::steeringManager::enableVelocitySteering() {
+void robotManager::steeringManager::enableVelocitySteering()
+{
     my_isVelocitySteering = true;
 }
 
-robotManager::cameraManager::cameraManager( ArClientBase* _client ) :
-    my_recordToFolder( false ), my_client( _client ),
+robotManager::cameraManager::cameraManager( ArClientBase* _client, ArKeyHandler* _keyHandler ) :
+    my_recordToFolder( false ), my_cameraSteeringActiveStatus( false ),
+    my_client( _client ), my_keyHandler( _keyHandler ),
     my_functor_handle_getCameraList(this, &robotManager::cameraManager::handle_getCameraList),
     my_functor_handle_snapshot(this, &robotManager::cameraManager::handle_snapshot),
     my_functor_handle_getCameraInfoCamera_1(this, &robotManager::cameraManager::handle_getCameraInfoCamera_1),
-    my_functor_hanlde_getCameraDataCamera_1(this, &robotManager::cameraManager::handle_getCameraDataCamera_1)
-    {
+    my_functor_hanlde_getCameraDataCamera_1(this, &robotManager::cameraManager::handle_getCameraDataCamera_1),
+    my_functor_handle_key_w(this, &robotManager::cameraManager::handle_key_w),
+    my_functor_handle_key_s(this, &robotManager::cameraManager::handle_key_s),
+    my_functor_handle_key_a(this, &robotManager::cameraManager::handle_key_a),
+    my_functor_handle_key_d(this, &robotManager::cameraManager::handle_key_d),
+    my_functor_handle_key_r(this, &robotManager::cameraManager::handle_key_r),
+    my_functor_handle_key_f(this, &robotManager::cameraManager::handle_key_f),
+    my_functor_thread_checkKeys( this, &robotManager::cameraManager::thread_checkKeys)
+{
 //        Something is wrong with this request. Please check in header file.
 //        my_client->addHandler("getCameraList", &my_functor_handle_getCameraList);
 //        my_client->requestOnce("getCameraList");
 
-        my_client->addHandler("sendVideo", &my_functor_handle_snapshot);
-        my_client->request("sendVideo", 1000);
+    my_client->addHandler("sendVideo", &my_functor_handle_snapshot);
+    my_client->request("sendVideo", 1000);
 
-        my_client->addHandler("getCameraInfoCamera_1", &my_functor_handle_getCameraInfoCamera_1);
-        my_client->request("getCameraInfoCamera_1", 1000);
+    my_client->addHandler("getCameraInfoCamera_1", &my_functor_handle_getCameraInfoCamera_1);
+    my_client->request("getCameraInfoCamera_1", 1000);
 
-        my_client->addHandler("getCameraDataCamera_1", &my_functor_hanlde_getCameraDataCamera_1);
-        my_client->request("getCameraDataCamera_1", 1000);
+    my_client->addHandler("getCameraDataCamera_1", &my_functor_hanlde_getCameraDataCamera_1);
+    my_client->request("getCameraDataCamera_1", 1000);
 
-        handle_setCameraAbsCamera_1(1000, 1000, 0);
-        resetPosition();
-    }
+    handle_setCameraAbsCamera_1(1000, 1000, 0);
+    resetPosition();
+}
 
 void robotManager::cameraManager::handle_getCameraList( ArNetPacket* packet )
 {
     int numberOfCameras = (int) packet->bufToByte2();
     if( numberOfCameras < 1 )
     {
-        printf("getCameraList handler: Could not find any camera.\n"); fflush(stdout);
+        printf("getCameraList handler: Could not find any camera.\n");
+        fflush(stdout);
         return;
     }
 
@@ -395,7 +415,8 @@ void robotManager::cameraManager::handle_getCameraList( ArNetPacket* packet )
 
     char genericName[255], commandName[255];
     int commandFrequency = 0;
-    for(int i = 0; i < numberOfCommands; i++) {
+    for(int i = 0; i < numberOfCommands; i++)
+    {
         memset( genericName, 0, sizeof(genericName));
         memset( commandName, 0, sizeof( commandName));
 
@@ -415,7 +436,8 @@ void robotManager::cameraManager::handle_getCameraList( ArNetPacket* packet )
     return;
 }
 
-void robotManager::cameraManager::handle_snapshot( ArNetPacket* packet ) {
+void robotManager::cameraManager::handle_snapshot( ArNetPacket* packet )
+{
     // Meta data variables:
     int width = (int) packet->bufToByte2();
     int height = (int) packet->bufToByte2();
@@ -428,10 +450,12 @@ void robotManager::cameraManager::handle_snapshot( ArNetPacket* packet ) {
     if( my_recordToFolder )
         recordFrame( image, toRead );
 
-    printf("Snap: %d | %d | %d\n", width, height, toRead); fflush(stdout);
+    printf("Snap: %d | %d | %d\n", width, height, toRead);
+    fflush(stdout);
 }
 
-void robotManager::cameraManager::handle_getCameraInfoCamera_1( ArNetPacket* packet ) {
+void robotManager::cameraManager::handle_getCameraInfoCamera_1( ArNetPacket* packet )
+{
     my_camera_minPan = (int) packet->bufToByte2();
     my_camera_maxPan = (int) packet->bufToByte2();
     my_camera_minTilt = (int) packet->bufToByte2();
@@ -452,7 +476,8 @@ void robotManager::cameraManager::handle_getCameraInfoCamera_1( ArNetPacket* pac
            my_camera_minZoom, my_camera_maxZoom);
 }
 
-void robotManager::cameraManager::handle_getCameraDataCamera_1( ArNetPacket* packet ) {
+void robotManager::cameraManager::handle_getCameraDataCamera_1( ArNetPacket* packet )
+{
     my_camera_pan = (int) packet->bufToByte2();
     my_camera_tilt = (int) packet->bufToByte2();
     my_camera_zoom = (int) packet->bufToByte2();
@@ -464,7 +489,8 @@ void robotManager::cameraManager::handle_getCameraDataCamera_1( ArNetPacket* pac
 ##\n", my_camera_pan, my_camera_tilt, my_camera_zoom);
 }
 
-void robotManager::cameraManager::handle_setCameraAbsCamera_1(int pan, int tilt, int zoom) {
+void robotManager::cameraManager::handle_setCameraAbsCamera_1(int pan, int tilt, int zoom)
+{
     ArNetPacket* packet = new ArNetPacket();
     packet->byte2ToBuf(pan);
     packet->byte2ToBuf(tilt);
@@ -473,7 +499,8 @@ void robotManager::cameraManager::handle_setCameraAbsCamera_1(int pan, int tilt,
     my_client->requestOnce("setCameraAbsCamera_1", packet);
 }
 
-void robotManager::cameraManager::handle_setCameraRelCamera_1(int plus_pan, int plus_tilt, int plus_zoom) {
+void robotManager::cameraManager::handle_setCameraRelCamera_1(int plus_pan, int plus_tilt, int plus_zoom)
+{
     ArNetPacket* packet = new ArNetPacket();
     packet->byte2ToBuf(plus_pan);
     packet->byte2ToBuf(plus_tilt);
@@ -482,19 +509,21 @@ void robotManager::cameraManager::handle_setCameraRelCamera_1(int plus_pan, int 
     my_client->requestOnce("setCameraRelCamera_1", packet);
 }
 
-void robotManager::cameraManager::resetPosition() {
+void robotManager::cameraManager::resetPosition()
+{
     handle_setCameraAbsCamera_1(0, 0, 0);
 }
 
-void robotManager::cameraManager::recordFrame(unsigned char* image, int length_of_image) {
+void robotManager::cameraManager::recordFrame(unsigned char* image, int length_of_image)
+{
 //    Please be careful, this image is encoded in jpeg format
     std::ostringstream stream_converter;
     stream_converter << my_frame_number;
     std::string temp_string = stream_converter.str();
     std::string filename;
     filename = std::string("video_record/")
-        + std::string( my_filename_length - temp_string.length(), '0')
-        + temp_string + my_file_extension;
+               + std::string( my_filename_length - temp_string.length(), '0')
+               + temp_string + my_file_extension;
 
     FILE *image_file;
     image_file = fopen(filename.c_str(), "wb");
@@ -504,13 +533,90 @@ void robotManager::cameraManager::recordFrame(unsigned char* image, int length_o
     my_frame_number++;
 }
 
-void robotManager::cameraManager::startRecording() {
+void robotManager::cameraManager::startRecording()
+{
     my_filename_length = 10;
     my_file_extension = std::string(".jpg");
     my_frame_number = 0;
     my_recordToFolder = true;
 }
 
-void robotManager::cameraManager::stopRecording() {
+void robotManager::cameraManager::stopRecording()
+{
     my_recordToFolder = false;
+}
+
+void robotManager::cameraManager::activateCameraSteering()
+{
+    if( !my_cameraSteeringActiveStatus )
+    {
+        my_keyHandler->addKeyHandler('w', &my_functor_handle_key_w);
+        my_keyHandler->addKeyHandler('s', &my_functor_handle_key_s);
+        my_keyHandler->addKeyHandler('a', &my_functor_handle_key_a);
+        my_keyHandler->addKeyHandler('d', &my_functor_handle_key_d);
+        my_keyHandler->addKeyHandler('r', &my_functor_handle_key_r);
+        my_keyHandler->addKeyHandler('f', &my_functor_handle_key_f);
+
+        my_thread_checkKeys.create( &my_functor_thread_checkKeys ); // CREATE THREAD FOR CHECKING KEYS
+
+        my_cameraSteeringActiveStatus = true;
+    }
+    return;
+}
+
+void robotManager::cameraManager::deactivateCameraSteering()
+{
+    if ( my_cameraSteeringActiveStatus  )
+    {
+        my_thread_checkKeys.cancel();
+
+        my_keyHandler->remKeyHandler('w');
+        my_keyHandler->remKeyHandler('s');
+        my_keyHandler->remKeyHandler('a');
+        my_keyHandler->remKeyHandler('d');
+        my_keyHandler->remKeyHandler('r');
+        my_keyHandler->remKeyHandler('f');
+
+        my_cameraSteeringActiveStatus = false;
+    }
+    return;
+}
+
+void robotManager::cameraManager::thread_checkKeys()
+{
+    while(true)
+    {
+        my_keyHandler->checkKeys();
+        ArUtil::sleep( 100 );
+    }
+}
+
+void robotManager::cameraManager::handle_key_w() {
+    // UP by 1 degree
+    handle_setCameraRelCamera_1(0, 1 * 100, 0);
+}
+
+void robotManager::cameraManager::handle_key_s() {
+    // DOWN by 1 degree
+    handle_setCameraRelCamera_1(0, -1 * 100, 0);
+}
+
+void robotManager::cameraManager::handle_key_a() {
+    // LEFT by 1 degree
+    handle_setCameraRelCamera_1(1 * 100, 0, 0);
+}
+
+void robotManager::cameraManager::handle_key_d() {
+    // RIGHT by 1 degree
+    handle_setCameraRelCamera_1(-1 * 100, 0, 0);
+}
+
+void robotManager::cameraManager::handle_key_r() {
+    // Add 1% zoom
+    handle_setCameraRelCamera_1(0, 0, 1 * 100);
+}
+
+void robotManager::cameraManager::handle_key_f() {
+    // Add -1% zoom
+    handle_setCameraRelCamera_1(0, 0, -1 * 100);
 }
