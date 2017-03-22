@@ -111,8 +111,17 @@ private:
         int my_camera_pan, my_camera_tilt,
         my_camera_zoom;
 
+        // Frame recording variables
+        bool my_recordToFolder;
+        int my_frame_number, my_filename_length;
+        std::string my_file_extension;
+
     protected:
         ArClientBase* my_client;
+
+        void recordFrame(unsigned char* image, int length_of_image );
+        void startRecording();
+        void stopRecording();
 
         void handle_setCameraAbsCamera_1(int pan, int tilt, int zoom);
         void handle_setCameraRelCamera_1(int plus_pan, int plus_tilt, int plus_zoom);

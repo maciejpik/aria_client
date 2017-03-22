@@ -1326,3 +1326,17 @@
 	"Aria.h"
 	"ArNetworking.h"
 
+1489597463 source:/home/m/Dokumenty/programowanie/client_Aria/main.cpp
+	<iostream>
+	<stdexcept>
+	<string>
+	<cstdio>
+	"robotManager.h"
+	<unistd.h>
+	<signal.h>
+
+1490189648 /home/m/Dokumenty/programowanie/client_Aria/robotManager.h
+	"Aria.h"
+	"ArNetworking.h"
+	"ArClientRatioDrive.h"
+

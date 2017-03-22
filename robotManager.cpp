@@ -3,6 +3,7 @@
 #include <iostream>
 #include <stdexcept>
 #include <string>
+#include <sstream>
 
 robotManager::robotManager( int* argc, char** argv) :
     parser( argc, argv ), clientConnector( &parser ),
@@ -329,7 +330,7 @@ void robotManager::steeringManager::handle_jogModeRequests(int i, double value )
 }
 
 robotManager::cameraManager::cameraManager( ArClientBase* _client ) :
-    my_client( _client ),
+    my_recordToFolder( false ), my_client( _client ),
     my_functor_handle_getCameraList(this, &robotManager::cameraManager::handle_getCameraList),
     my_functor_handle_snapshot(this, &robotManager::cameraManager::handle_snapshot),
     my_functor_handle_getCameraInfoCamera_1(this, &robotManager::cameraManager::handle_getCameraInfoCamera_1),
@@ -407,10 +408,9 @@ void robotManager::cameraManager::handle_snapshot( ArNetPacket* packet ) {
     unsigned char image[toRead];
     packet->bufToData( image, toRead );
 
-    FILE *fp2;
-    fp2 = fopen("snap.jpg", "wb");
-    fwrite(image, toRead, 1, fp2);
-    fclose(fp2);
+    if( my_recordToFolder )
+        recordFrame( image, toRead );
+
 //    FILE* f = fopen("image_data.txt", "wb");
 //    fwrite(image, toRead, 1, fp2);
 ////    for(int i = 0; i < toRead; i++)
@@ -473,4 +473,33 @@ void robotManager::cameraManager::handle_setCameraRelCamera_1(int plus_pan, int 
 
 void robotManager::cameraManager::resetPosition() {
     handle_setCameraAbsCamera_1(0, 0, 0);
+}
+
+void robotManager::cameraManager::recordFrame(unsigned char* image, int length_of_image) {
+//    Please be careful, this image is encoded in jpeg format
+    std::ostringstream stream_converter;
+    stream_converter << my_frame_number;
+    std::string temp_string = stream_converter.str();
+    std::string filename;
+    filename = std::string("video_record/")
+        + std::string( my_filename_length - temp_string.length(), '0')
+        + temp_string + my_file_extension;
+
+    FILE *image_file;
+    image_file = fopen(filename.c_str(), "wb");
+    fwrite(image, length_of_image, 1, image_file);
+    fclose(image_file);
+
+    my_frame_number++;
+}
+
+void robotManager::cameraManager::startRecording() {
+    my_filename_length = 10;
+    my_file_extension = std::string(".jpg");
+    my_frame_number = 0;
+    my_recordToFolder = true;
+}
+
+void robotManager::cameraManager::stopRecording() {
+    my_recordToFolder = false;
 }
