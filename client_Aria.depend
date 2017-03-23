@@ -1335,12 +1335,12 @@
 	<unistd.h>
 	<signal.h>
 
-1490258272 /home/m/Dokumenty/programowanie/client_Aria/robotManager.h
+1490306340 /home/m/Dokumenty/programowanie/client_Aria/robotManager.h
 	"Aria.h"
 	"ArNetworking.h"
 	"ArClientRatioDrive.h"
 
-1490221897 source:/home/m/Dokumenty/programowanie/client_Aria/robotManager.cpp
+1490299084 source:/home/m/Dokumenty/programowanie/client_Aria/robotManager.cpp
 	"robotManager.h"
 	<iostream>
 	<stdexcept>

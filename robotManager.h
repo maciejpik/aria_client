@@ -43,10 +43,33 @@ private:
         ArFunctor1C<requestsHandler, ArNetPacket*> my_functor_handle_getSensorCurrent;
     };
 
+    class keyHandlerMaster: public ArKeyHandler
+    {
+    public:
+        keyHandlerMaster(bool blocking=false, bool addAriaExitCB=true,
+                         FILE* stream=NULL, bool takeKeysInConstructor=true);
+        ~keyHandlerMaster();
+
+        void addCallback(ArFunctor *func);
+        void removeCallback(ArFunctor *func);
+
+    protected:
+        ArThread my_thread_checkKeys;
+        std::vector<ArFunctor*> my_callbacksVector;
+
+        int findElementIndex(ArFunctor *func);
+
+        // CALLBACKS FUNCTIONS
+        void thread_checkKeys(void);
+
+        // CALLBACKS FUNCTORS
+        ArFunctorC<keyHandlerMaster> my_functor_thread_checkKeys;
+    };
+
     class cameraManager
     {
     public:
-        cameraManager( ArClientBase* _client, ArKeyHandler* _keyHandler );
+        cameraManager( ArClientBase* _client, keyHandlerMaster* _keyHandler );
 
         // Camera steering
         void resetPosition();
@@ -98,9 +121,7 @@ private:
 
     protected:
         ArClientBase* my_client;
-        ArKeyHandler* my_keyHandler;
-
-        ArThread my_thread_checkKeys; //ATTENTION! THIS CLASS CREATS ITS OWN THREAD
+        keyHandlerMaster* my_keyHandler;
 
         void recordFrame(unsigned char* image, int length_of_image );
 
@@ -118,7 +139,6 @@ private:
         void handle_key_d(void);
         void handle_key_r(void);
         void handle_key_f(void);
-        void thread_checkKeys(void);
         // Key handling (E)
 
         // CALBACKS FUNCTORS
@@ -133,14 +153,13 @@ private:
         ArFunctorC<cameraManager> my_functor_handle_key_d;
         ArFunctorC<cameraManager> my_functor_handle_key_r;
         ArFunctorC<cameraManager> my_functor_handle_key_f;
-        ArFunctorC<cameraManager> my_functor_thread_checkKeys;
         // Key handling (E)
     };
 
     class steeringManager
     {
     public:
-        steeringManager( ArClientBase *_client, ArKeyHandler *_keyHandler,
+        steeringManager( ArClientBase *_client, keyHandlerMaster *_keyHandler,
                          bool _activateKeySteering = true);
 
         void moveDistance( double distance_mm );
@@ -162,10 +181,8 @@ private:
 
     protected:
         ArClientBase* my_client;
-        ArKeyHandler* my_keyHandler;
+        keyHandlerMaster* my_keyHandler;
         ArClientRatioDrive my_clientRatioDrive;
-
-        ArThread my_thread_checkKeys; //ATTENTION! THIS CLASS CREATS ITS OWN THREAD
 
         void activateKeySteering(void);
         void deactivateKeySteering(void);
@@ -178,7 +195,7 @@ private:
         void handle_key_left(void);
         void handle_key_right(void);
         void handle_key_space(void);
-        void thread_checkKeys(void);
+        void callback_keySteeringCallback(void);
 
         // CALLBACKS FUNCTORS
         ArFunctorC<steeringManager> my_functor_handle_key_up;
@@ -186,14 +203,14 @@ private:
         ArFunctorC<steeringManager> my_functor_handle_key_left;
         ArFunctorC<steeringManager> my_functor_handle_key_right;
         ArFunctorC<steeringManager> my_functor_handle_key_space;
-        ArFunctorC<steeringManager> my_functor_thread_checkKeys;
+        ArFunctorC<steeringManager> my_functor_callback_keySteeringCallback;
     };
 
 private:
     ArArgumentParser parser;
     ArClientBase client;
     ArClientSimpleConnector clientConnector;
-    ArKeyHandler keyHandler;
+    keyHandlerMaster keyHandler;
 
     bool my_isClienRunning;
 

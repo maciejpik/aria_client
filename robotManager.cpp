@@ -34,7 +34,6 @@ robotManager::robotManager( int* argc, char** argv) :
         my_isClienRunning = false;
     }
 
-    Aria::setKeyHandler( &keyHandler );
     // Prepare nested-classes managers
     requests = new requestsHandler( &client );
     steering = new steeringManager( &client, &keyHandler );
@@ -178,7 +177,7 @@ void robotManager::requestsHandler::enableVerboseMode()
 }
 
 robotManager::steeringManager::steeringManager( ArClientBase *_client,
-        ArKeyHandler *_keyHandler, bool _activateKeySteering) :
+        keyHandlerMaster *_keyHandler, bool _activateKeySteering) :
     my_verboseMode( false ), my_keySteeringActiveStatus( false ),
     my_isRunningByKeys( false ), my_isVelocitySteering( false ),
     VEL_PERC( 50 ), my_velThrottle(0), my_rotThrottle(0),
@@ -188,7 +187,7 @@ robotManager::steeringManager::steeringManager( ArClientBase *_client,
     my_functor_handle_key_left( this, &robotManager::steeringManager::handle_key_left),
     my_functor_handle_key_right( this, &robotManager::steeringManager::handle_key_right),
     my_functor_handle_key_space( this, &robotManager::steeringManager::handle_key_space),
-    my_functor_thread_checkKeys( this, &robotManager::steeringManager::thread_checkKeys)
+    my_functor_callback_keySteeringCallback( this, &robotManager::steeringManager::callback_keySteeringCallback)
 {
     if ( _activateKeySteering )
         activateKeySteering();
@@ -241,52 +240,42 @@ void robotManager::steeringManager::handle_key_space()
     my_clientRatioDrive.stop();
 }
 
-void robotManager::steeringManager::thread_checkKeys()
+void robotManager::steeringManager::callback_keySteeringCallback()
 {
-    while( true )
+    if (ArMath::fabs( my_velThrottle ) < 0.01 &&
+            ArMath::fabs( my_rotThrottle ) < 0.01)
     {
-        my_keyHandler->checkKeys();
-
-        //@ThrottleKeyboardMode
-        //This mod simulate throttle for keyboard driving. Please remove all
-        //@ThrottleKeyboardMode addresses / comments to get back to default
-        //setup.
-        if (ArMath::fabs( my_velThrottle ) < 0.01 &&
-                ArMath::fabs( my_rotThrottle ) < 0.01)
+        if ( my_isRunningByKeys )
         {
-            if ( my_isRunningByKeys )
-            {
-                my_clientRatioDrive.stop();
-                my_isRunningByKeys = false;
-            }
+            my_clientRatioDrive.stop();
+            my_isRunningByKeys = false;
         }
+    }
+    else
+    {
+        my_isRunningByKeys = true;
+
+        if (my_velThrottle > 0)
+            my_velThrottle -= 0.015;
         else
-        {
-            my_isRunningByKeys = true;
+            my_velThrottle += 0.015;
 
-            if (my_velThrottle > 0)
-                my_velThrottle -= 0.015;
-            else
-                my_velThrottle += 0.015;
+        if (my_rotThrottle > 0)
+            my_rotThrottle -= 0.025;
+        else
+            my_rotThrottle += 0.025;
 
-            if (my_rotThrottle > 0)
-                my_rotThrottle -= 0.025;
-            else
-                my_rotThrottle += 0.025;
+        if (my_velThrottle < -1)
+            my_velThrottle = -1;
+        else if(my_velThrottle > 1)
+            my_velThrottle = 1;
+        if (my_rotThrottle < -1)
+            my_rotThrottle = -1;
+        else if (my_rotThrottle > 1)
+            my_rotThrottle = 1;
 
-            if (my_velThrottle < -1)
-                my_velThrottle = -1;
-            else if(my_velThrottle > 1)
-                my_velThrottle = 1;
-            if (my_rotThrottle < -1)
-                my_rotThrottle = -1;
-            else if (my_rotThrottle > 1)
-                my_rotThrottle = 1;
-
-            my_clientRatioDrive.setTransVelRatio( VEL_PERC * my_velThrottle);
-            my_clientRatioDrive.setRotVelRatio( VEL_PERC * my_rotThrottle);
-        }
-        ArUtil::sleep( 100 );
+        my_clientRatioDrive.setTransVelRatio( VEL_PERC * my_velThrottle);
+        my_clientRatioDrive.setRotVelRatio( VEL_PERC * my_rotThrottle);
     }
 }
 
@@ -299,9 +288,7 @@ void robotManager::steeringManager::activateKeySteering()
         my_keyHandler->addKeyHandler(ArKeyHandler::LEFT, &my_functor_handle_key_left);
         my_keyHandler->addKeyHandler(ArKeyHandler::RIGHT, &my_functor_handle_key_right);
         my_keyHandler->addKeyHandler(ArKeyHandler::SPACE, &my_functor_handle_key_space);
-
-        my_thread_checkKeys.create( &my_functor_thread_checkKeys ); // CREATE THREAD FOR CHECKING KEYS
-
+        my_keyHandler->addCallback( &my_functor_callback_keySteeringCallback );
         my_keySteeringActiveStatus = true;
     }
     return;
@@ -311,14 +298,12 @@ void robotManager::steeringManager::deactivateKeySteering()
 {
     if ( my_keySteeringActiveStatus )
     {
-        my_thread_checkKeys.cancel();
-
         my_keyHandler->remKeyHandler(ArKeyHandler::UP);
         my_keyHandler->remKeyHandler(ArKeyHandler::DOWN);
         my_keyHandler->remKeyHandler(ArKeyHandler::LEFT);
         my_keyHandler->remKeyHandler(ArKeyHandler::RIGHT);
         my_keyHandler->remKeyHandler(ArKeyHandler::SPACE);
-
+        my_keyHandler->removeCallback( &my_functor_callback_keySteeringCallback );
         my_keySteeringActiveStatus = false;
     }
     return;
@@ -385,7 +370,7 @@ void robotManager::steeringManager::enableVerboseMode()
     my_verboseMode = true;
 }
 
-robotManager::cameraManager::cameraManager( ArClientBase* _client, ArKeyHandler* _keyHandler ) :
+robotManager::cameraManager::cameraManager( ArClientBase* _client, keyHandlerMaster* _keyHandler ) :
     my_sendVideoDelay( 100 ), my_video_mutexOn(false),
     my_recordToFolder( false ), my_cameraSteeringActiveStatus( false ),
     my_client( _client ), my_keyHandler( _keyHandler ),
@@ -398,8 +383,7 @@ robotManager::cameraManager::cameraManager( ArClientBase* _client, ArKeyHandler*
     my_functor_handle_key_a(this, &robotManager::cameraManager::handle_key_a),
     my_functor_handle_key_d(this, &robotManager::cameraManager::handle_key_d),
     my_functor_handle_key_r(this, &robotManager::cameraManager::handle_key_r),
-    my_functor_handle_key_f(this, &robotManager::cameraManager::handle_key_f),
-    my_functor_thread_checkKeys( this, &robotManager::cameraManager::thread_checkKeys)
+    my_functor_handle_key_f(this, &robotManager::cameraManager::handle_key_f)
 {
 //        Something is wrong with this request. Please check in header file.
 //        my_client->addHandler("getCameraList", &my_functor_handle_getCameraList);
@@ -603,8 +587,6 @@ void robotManager::cameraManager::activateCameraSteering()
         my_keyHandler->addKeyHandler('r', &my_functor_handle_key_r);
         my_keyHandler->addKeyHandler('f', &my_functor_handle_key_f);
 
-        my_thread_checkKeys.create( &my_functor_thread_checkKeys ); // CREATE THREAD FOR CHECKING KEYS
-
         my_cameraSteeringActiveStatus = true;
     }
     return;
@@ -614,8 +596,6 @@ void robotManager::cameraManager::deactivateCameraSteering()
 {
     if ( my_cameraSteeringActiveStatus  )
     {
-        my_thread_checkKeys.cancel();
-
         my_keyHandler->remKeyHandler('w');
         my_keyHandler->remKeyHandler('s');
         my_keyHandler->remKeyHandler('a');
@@ -628,20 +608,12 @@ void robotManager::cameraManager::deactivateCameraSteering()
     return;
 }
 
-void robotManager::cameraManager::thread_checkKeys()
-{
-    while(true)
-    {
-        my_keyHandler->checkKeys();
-        ArUtil::sleep( 100 );
-    }
-}
-
 void robotManager::cameraManager::handle_key_w()
 {
     // UP by 5 degree
     handle_setCameraRelCamera_1(0, 5 * 100, 0);
-    printf("Lec w gore..."); fflush(stdout);
+    printf("Lec w gore...");
+    fflush(stdout);
 }
 
 void robotManager::cameraManager::handle_key_s()
@@ -689,4 +661,56 @@ std::pair<unsigned char*, int> robotManager::cameraManager::getSendVideoFrame()
 void robotManager::cameraManager::enableVerboseMode()
 {
     my_verboseMode = true;
+}
+
+robotManager::keyHandlerMaster::keyHandlerMaster(bool blocking,
+        bool addAriaExitCB,
+        FILE* stream,
+        bool takeKeysInConstructor) :
+    ArKeyHandler(blocking, addAriaExitCB, stream, takeKeysInConstructor),
+    my_functor_thread_checkKeys( this, &robotManager::keyHandlerMaster::thread_checkKeys)
+{
+    my_thread_checkKeys.create( &my_functor_thread_checkKeys );
+}
+
+robotManager::keyHandlerMaster::~keyHandlerMaster()
+{
+    my_thread_checkKeys.cancel();
+}
+
+void robotManager::keyHandlerMaster::thread_checkKeys()
+{
+    while( true )
+    {
+        checkKeys();
+        for(std::vector<ArFunctor*>::iterator func = my_callbacksVector.begin();
+                func != my_callbacksVector.end(); ++func)
+            (*func)->invoke();
+        ArUtil::sleep(100);
+    }
+}
+
+int robotManager::keyHandlerMaster::findElementIndex( ArFunctor* func_ )
+{
+    int index = 0;
+    for(std::vector<ArFunctor*>::iterator func = my_callbacksVector.begin();
+            func != my_callbacksVector.end(); ++func, index++)
+    {
+        if( func_ == (*func) )
+            return index;
+    }
+    return -1;
+}
+
+void robotManager::keyHandlerMaster::addCallback( ArFunctor* func )
+{
+    if( findElementIndex( func ) < 0 )
+        my_callbacksVector.push_back( func );
+}
+
+void robotManager::keyHandlerMaster::removeCallback( ArFunctor* func )
+{
+    int element_index = findElementIndex( func );
+    if( element_index > -1 )
+        my_callbacksVector.erase( my_callbacksVector.begin() + element_index );
 }
