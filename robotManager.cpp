@@ -49,6 +49,11 @@ robotManager::robotManager( int* argc, char** argv) :
     steering->enableVerboseMode();
     camera->enableVerboseMode();
 
+    // Other options
+//    steering->enableDistSteering();
+//    camera->activateCameraSteering();
+//    camera->startRecording();
+
     //client.logDataList();
     //client.findCommandFromName("listCommands");
 }
@@ -198,7 +203,7 @@ void robotManager::steeringManager::handle_key_up()
         my_velThrottle += 0.025; //@ThrottleKeyboardMode
         //my_clientRatioDrive.setTransVelRatio( VEL_PERC ); //@ThrottleKeyboardMode
     }
-    else moveDistance( 10 );
+    else moveDistance( 20 );
 }
 
 void robotManager::steeringManager::handle_key_down()
@@ -410,7 +415,7 @@ robotManager::cameraManager::cameraManager( ArClientBase* _client, ArKeyHandler*
     my_client->request("getCameraDataCamera_1", 1000);
 
     handle_setCameraAbsCamera_1(1000, 1000, 0);
-    resetPosition();
+    //resetPosition();
 }
 
 void robotManager::cameraManager::handle_getCameraList( ArNetPacket* packet )
@@ -634,38 +639,39 @@ void robotManager::cameraManager::thread_checkKeys()
 
 void robotManager::cameraManager::handle_key_w()
 {
-    // UP by 1 degree
-    handle_setCameraRelCamera_1(0, 1 * 100, 0);
+    // UP by 5 degree
+    handle_setCameraRelCamera_1(0, 5 * 100, 0);
+    printf("Lec w gore..."); fflush(stdout);
 }
 
 void robotManager::cameraManager::handle_key_s()
 {
-    // DOWN by 1 degree
-    handle_setCameraRelCamera_1(0, -1 * 100, 0);
+    // DOWN by 5 degree
+    handle_setCameraRelCamera_1(0, -5 * 100, 0);
 }
 
 void robotManager::cameraManager::handle_key_a()
 {
-    // LEFT by 1 degree
-    handle_setCameraRelCamera_1(1 * 100, 0, 0);
+    // LEFT by 5 degree
+    handle_setCameraRelCamera_1(-5 * 100, 0, 0);
 }
 
 void robotManager::cameraManager::handle_key_d()
 {
-    // RIGHT by 1 degree
-    handle_setCameraRelCamera_1(-1 * 100, 0, 0);
+    // RIGHT by 5 degree
+    handle_setCameraRelCamera_1(5 * 100, 0, 0);
 }
 
 void robotManager::cameraManager::handle_key_r()
 {
-    // Add 1% zoom
-    handle_setCameraRelCamera_1(0, 0, 1 * 100);
+    // Add 5% zoom
+    handle_setCameraRelCamera_1(0, 0, 5 * 100);
 }
 
 void robotManager::cameraManager::handle_key_f()
 {
-    // Add -1% zoom
-    handle_setCameraRelCamera_1(0, 0, -1 * 100);
+    // Add -5% zoom
+    handle_setCameraRelCamera_1(0, 0, -5 * 100);
 }
 
 int robotManager::cameraManager::getSendVideoDelay()

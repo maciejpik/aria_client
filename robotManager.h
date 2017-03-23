@@ -61,6 +61,9 @@ private:
         int getSendVideoDelay();
         std::pair<unsigned char*, int> getSendVideoFrame();
 
+        void startRecording();
+        void stopRecording();
+
         void enableVerboseMode();
 
     private:
@@ -100,8 +103,6 @@ private:
         ArThread my_thread_checkKeys; //ATTENTION! THIS CLASS CREATS ITS OWN THREAD
 
         void recordFrame(unsigned char* image, int length_of_image );
-        void startRecording();
-        void stopRecording();
 
         // CALLBACKS FUNCTIONS
         void handle_getCameraList( ArNetPacket* packet ); // This function does
