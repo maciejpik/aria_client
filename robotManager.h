@@ -20,6 +20,14 @@ private:
     public:
         requestsHandler( ArClientBase *_client );
         void enableVerboseMode();
+        bool startReadingLaser();
+
+        // Getters for position information
+        double get_xPosition();
+        double get_yPosition();
+        double get_theta();
+        double get_velocity();
+        double get_rotationalVelocity();
 
     protected:
         double my_batteryVoltage,
@@ -31,6 +39,8 @@ private:
         ArClientBase* my_client;
 
         bool my_verboseMode;
+
+        std::vector<std::string> my_sensorsVector;
 
 //    CALLBACKS FUNCTIONS
         void handle_updateNumbers( ArNetPacket *packet );
@@ -52,6 +62,9 @@ private:
 
         void addCallback(ArFunctor *func);
         void removeCallback(ArFunctor *func);
+
+        void startKeyMaster();
+        void stopKeyMaster();
 
     protected:
         ArThread my_thread_checkKeys;
@@ -82,6 +95,7 @@ private:
 
         // Send video
         int getSendVideoDelay();
+        int getSynchroTime_ums();
         std::pair<unsigned char*, int> getSendVideoFrame();
 
         void startRecording();
@@ -210,7 +224,6 @@ private:
     ArArgumentParser parser;
     ArClientBase client;
     ArClientSimpleConnector clientConnector;
-    keyHandlerMaster keyHandler;
 
     bool my_isClienRunning;
 
@@ -218,6 +231,7 @@ public:
     requestsHandler* requests;
     steeringManager* steering;
     cameraManager* camera;
+    keyHandlerMaster* keyHandler;
 };
 
 #endif // ROBOTMANAGER_H_INCLUDED

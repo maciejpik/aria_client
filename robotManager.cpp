@@ -6,9 +6,9 @@
 #include <sstream>
 
 robotManager::robotManager( int* argc, char** argv) :
-    parser( argc, argv ), clientConnector( &parser ),
-    keyHandler()
+    parser( argc, argv ), clientConnector( &parser )
 {
+    this->keyHandler = new keyHandlerMaster();
     Aria::init();
 
     parser.addDefaultArgument("-host 10.0.126.32");
@@ -36,17 +36,12 @@ robotManager::robotManager( int* argc, char** argv) :
 
     // Prepare nested-classes managers
     requests = new requestsHandler( &client );
-    steering = new steeringManager( &client, &keyHandler );
-    camera = new cameraManager( &client, &keyHandler );
+    steering = new steeringManager( &client, keyHandler );
+    camera = new cameraManager( &client, keyHandler );
 
     // Run the client
     client.runAsync();
     my_isClienRunning = true;
-
-    // Enable verbose mode
-    requests->enableVerboseMode();
-    steering->enableVerboseMode();
-    camera->enableVerboseMode();
 
     // Other options
 //    steering->enableDistSteering();
@@ -129,24 +124,37 @@ void robotManager::requestsHandler::handle_getSensorList( ArNetPacket* packet )
     int numberOfSensors = (int) packet->bufToByte2();
     char sensorName[255];
 
-    if( numberOfSensors > 0 )
+    for( int i = 0; i < numberOfSensors; i++ )
     {
         memset(sensorName, 0, sizeof(sensorName));
         packet->bufToStr( sensorName, sizeof( sensorName ));
+        my_sensorsVector.push_back( std::string( sensorName ) );
     }
 
     if (my_verboseMode)
     {
-        printf("SENSORS: %3d => (1) %20s\n", numberOfSensors, sensorName );
+        printf("SENSORS AVAILABLE:\n");
+        for( std::vector<std::string>::iterator i = my_sensorsVector.begin(); i != my_sensorsVector.end(); ++i)
+            printf("\t* %s\n", (*i).c_str() );
         fflush(stdout);
     }
+}
 
-    // Start reading data from laser reading (or the first radar received information about)
-    ArNetPacket* request_name_packet = new ArNetPacket();
-    request_name_packet->strToBuf( sensorName );
-    request_name_packet->finalizePacket();
+bool robotManager::requestsHandler::startReadingLaser()
+{
+    // Start reading data from laser reading (or the first radar recognized).
+    // We assume here that laser is shown as the first radar.
+    if( my_sensorsVector.size() > 0 )
+    {
+        ArNetPacket* request_name_packet = new ArNetPacket();
+        request_name_packet->strToBuf( my_sensorsVector[0].c_str() );
+        request_name_packet->finalizePacket();
 
-    my_client->request("getSensorCurrent", 100, request_name_packet);
+        my_client->request("getSensorCurrent", 100, request_name_packet);
+        return true;
+    }
+    else
+        return false;
 }
 
 void robotManager::requestsHandler::handle_getSensorCurrent( ArNetPacket* packet )
@@ -159,21 +167,50 @@ void robotManager::requestsHandler::handle_getSensorCurrent( ArNetPacket* packet
     memset(sensorName, 0, sizeof(sensorName));
     packet->bufToStr( sensorName, sizeof( sensorName ));
 
-    std::map< int, std::pair<int, int> > reading_laser;
-    for( int i = -(numberOfReadings - 1)/ 2; i <= (numberOfReadings - 1)/ 2; i++ )
+    if( std::string( sensorName ) == my_sensorsVector[0] )
     {
-        reading_laser[i] = std::make_pair( packet->bufToByte4(), packet->bufToByte4());
+        // Assuming that laser is at [0]
+        std::map< int, std::pair<int, int> > reading_laser;
+        for( int i = -(numberOfReadings - 1)/ 2; i <= (numberOfReadings - 1)/ 2; i++ )
+        {
+            reading_laser[i] = std::make_pair( packet->bufToByte4(), packet->bufToByte4());
+        }
+        if( my_verboseMode )
+        {
+            printf("LASER READING (%d): (%6d, %6d)\n", 0, reading_laser[-(numberOfReadings - 1)/ 2].first, reading_laser[0].second);
+            fflush(stdout);
+        }
     }
-//    if( my_verboseMode )
-//    {
-//        printf("READING (%d): (%6d, %6d)\n", 0, reading_laser[-(numberOfReadings - 1)/ 2].first, reading_laser[0].second);
-//        fflush(stdout);
-//    }
 }
 
 void robotManager::requestsHandler::enableVerboseMode()
 {
     my_verboseMode = true;
+}
+
+double robotManager::requestsHandler::get_xPosition()
+{
+    return my_xPosition;
+}
+
+double robotManager::requestsHandler::get_yPosition()
+{
+    return my_yPosition;
+}
+
+double robotManager::requestsHandler::get_theta()
+{
+    return my_theta;
+}
+
+double robotManager::requestsHandler::get_velocity()
+{
+    return my_velocity;
+}
+
+double robotManager::requestsHandler::get_rotationalVelocity()
+{
+    return my_rotationalVelocity;
 }
 
 robotManager::steeringManager::steeringManager( ArClientBase *_client,
@@ -651,6 +688,11 @@ int robotManager::cameraManager::getSendVideoDelay()
     return my_sendVideoDelay;
 }
 
+int robotManager::cameraManager::getSynchroTime_ums()
+{
+    return my_sendVideoDelay * 1000;
+}
+
 std::pair<unsigned char*, int> robotManager::cameraManager::getSendVideoFrame()
 {
     while( my_video_mutexOn )
@@ -670,7 +712,7 @@ robotManager::keyHandlerMaster::keyHandlerMaster(bool blocking,
     ArKeyHandler(blocking, addAriaExitCB, stream, takeKeysInConstructor),
     my_functor_thread_checkKeys( this, &robotManager::keyHandlerMaster::thread_checkKeys)
 {
-    my_thread_checkKeys.create( &my_functor_thread_checkKeys );
+
 }
 
 robotManager::keyHandlerMaster::~keyHandlerMaster()
@@ -713,4 +755,16 @@ void robotManager::keyHandlerMaster::removeCallback( ArFunctor* func )
     int element_index = findElementIndex( func );
     if( element_index > -1 )
         my_callbacksVector.erase( my_callbacksVector.begin() + element_index );
+}
+
+void robotManager::keyHandlerMaster::startKeyMaster()
+{
+    if( !my_thread_checkKeys.getRunning() )
+        my_thread_checkKeys.create( &my_functor_thread_checkKeys );
+}
+
+void robotManager::keyHandlerMaster::stopKeyMaster()
+{
+    if( my_thread_checkKeys.getRunning() )
+        my_thread_checkKeys.cancel();
 }
