@@ -13,6 +13,7 @@ public:
 
     bool client_getRunningWithLock();
     bool isClientRunning();
+    void disableNativeAriaLogging();
 
 private:
     class requestsHandler

@@ -81,6 +81,11 @@ bool robotManager::isClientRunning()
     return my_isClienRunning;
 }
 
+void robotManager::disableNativeAriaLogging()
+{
+    ArLog::setLogLevel( ArLog::Terse );
+}
+
 robotManager::requestsHandler::requestsHandler( ArClientBase* _client) :
     my_client( _client ),
     my_verboseMode( false ),
