@@ -67,6 +67,9 @@ private:
         void startKeyMaster();
         void stopKeyMaster();
 
+        void pressKey(int key);
+        void invokeCallbacks();
+
     protected:
         ArThread my_thread_checkKeys;
         std::vector<ArFunctor*> my_callbacksVector;

@@ -773,3 +773,16 @@ void robotManager::keyHandlerMaster::stopKeyMaster()
     if( my_thread_checkKeys.getRunning() )
         my_thread_checkKeys.cancel();
 }
+
+void robotManager::keyHandlerMaster::pressKey( int key )
+{
+    if( myMap.count( key ) )
+        myMap[key]->invoke();
+}
+
+void robotManager::keyHandlerMaster::invokeCallbacks()
+{
+    for(std::vector<ArFunctor*>::iterator func = my_callbacksVector.begin();
+            func != my_callbacksVector.end(); ++func)
+        (*func)->invoke();
+}
