@@ -24,6 +24,8 @@ int main(int argc, char **argv)
     // Enable key handling
     _robotManager.keyHandler->startKeyMaster();
 
+    _robotManager.camera->activateCameraSteering();
+
     while ( _robotManager.client_getRunningWithLock() )
     {
         printf("Dzialam...\n");

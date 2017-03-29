@@ -413,7 +413,7 @@ void robotManager::steeringManager::enableVerboseMode()
 }
 
 robotManager::cameraManager::cameraManager( ArClientBase* _client, keyHandlerMaster* _keyHandler ) :
-    my_sendVideoDelay( 100 ), my_video_mutexOn(false),
+    my_sendVideoDelay( 100 ), my_video_mutexOn(true),
     my_recordToFolder( false ), my_cameraSteeringActiveStatus( false ),
     my_client( _client ), my_keyHandler( _keyHandler ),
     my_functor_handle_getCameraList(this, &robotManager::cameraManager::handle_getCameraList),
@@ -440,8 +440,8 @@ robotManager::cameraManager::cameraManager( ArClientBase* _client, keyHandlerMas
     my_client->addHandler("getCameraDataCamera_1", &my_functor_hanlde_getCameraDataCamera_1);
     my_client->request("getCameraDataCamera_1", 1000);
 
-    handle_setCameraAbsCamera_1(1000, 1000, 0);
-    //resetPosition();
+//    handle_setCameraAbsCamera_1(1000, 1000, 0);
+    resetPosition();
 }
 
 void robotManager::cameraManager::handle_getCameraList( ArNetPacket* packet )
@@ -498,12 +498,12 @@ void robotManager::cameraManager::handle_snapshot( ArNetPacket* packet )
     int height = (int) packet->bufToByte2();
 
     // Calculate how much should we read to obtain image
+    my_video_mutexOn = true;
     my_lastSnapSize = (int) packet->getDataLength() - (int) packet->getDataReadLength();
 //    unsigned char image[toRead];
 //    packet->bufToData( image, toRead )
     // Set on the mutex so other functions know that my_lastSnap is under
     // maintenance.
-    my_video_mutexOn = true;
     memset( my_lastSnap, 0, sizeof( my_lastSnap ));
     packet->bufToData( my_lastSnap, my_lastSnapSize );
     my_video_mutexOn = false;
@@ -702,7 +702,7 @@ std::pair<unsigned char*, int> robotManager::cameraManager::getSendVideoFrame()
 {
     while( my_video_mutexOn )
         ArUtil::sleep( 2 );
-    return std::make_pair( my_lastSnap, my_lastSnapSize);
+    return std::make_pair( &my_lastSnap[0], my_lastSnapSize);
 }
 
 void robotManager::cameraManager::enableVerboseMode()

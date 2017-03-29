@@ -1326,7 +1326,7 @@
 	"Aria.h"
 	"ArNetworking.h"
 
-1490643662 source:/home/m/Dokumenty/programowanie/client_Aria/main.cpp
+1490775567 source:/home/m/Dokumenty/programowanie/client_Aria/main.cpp
 	<iostream>
 	<stdexcept>
 	<string>
@@ -1335,12 +1335,12 @@
 	<unistd.h>
 	<signal.h>
 
-1490541371 /home/m/Dokumenty/programowanie/client_Aria/robotManager.h
+1490655746 /home/m/Dokumenty/programowanie/client_Aria/robotManager.h
 	"Aria.h"
 	"ArNetworking.h"
 	"ArClientRatioDrive.h"
 
-1490541424 source:/home/m/Dokumenty/programowanie/client_Aria/robotManager.cpp
+1490655950 source:/home/m/Dokumenty/programowanie/client_Aria/robotManager.cpp
 	"robotManager.h"
 	<iostream>
 	<stdexcept>
