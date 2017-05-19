@@ -14,7 +14,7 @@ using namespace std;
 
 int main(int argc, char **argv)
 {
-    robotManager _robotManager( &argc, argv );
+    robotManager _robotManager( &argc, argv, "10.0.126.32" );
 
     // Enable verbose mode
     _robotManager.requests->enableVerboseMode();

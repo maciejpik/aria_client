@@ -5,14 +5,13 @@
 #include <string>
 #include <sstream>
 
-robotManager::robotManager( int* argc, char** argv) :
+robotManager::robotManager( int* argc, char** argv, std::string ipAddress) :
     parser( argc, argv ), clientConnector( &parser )
 {
     this->keyHandler = new keyHandlerMaster();
     Aria::init();
 
-    parser.addDefaultArgument("-host 10.0.126.32");
-//    parser.addDefaultArgument("-host 127.0.0.1");
+    parser.addDefaultArgument( ("-host " + ipAddress).c_str() );
     parser.loadDefaultArguments();
 
     try
@@ -44,25 +43,13 @@ robotManager::robotManager( int* argc, char** argv) :
     my_isClienRunning = true;
 
     // Other options
-//    steering->enableDistSteering();
-//    camera->activateCameraSteering();
-//    camera->startRecording();
+    // steering->enableDistSteering();
+    // camera->activateCameraSteering();
+    // camera->startRecording();
 
     //client.logDataList();
     //client.findCommandFromName("listCommands");
 }
-
-/*
-robotManager::robotManager()
-{
-    Aria::init();
-
-    int argc = 0;
-    char** argv = NULL;
-
-    robotManager::_initializeRobotManager( argc, argv );
-}
-*/
 
 robotManager::~robotManager()
 {
@@ -96,7 +83,7 @@ robotManager::requestsHandler::requestsHandler( ArClientBase* _client) :
     // Handlers installation
     my_client->addHandler("getSensorCurrent", &my_functor_handle_getSensorCurrent);
 
-//        Add "updateNumers" requests routine (1000 ms)
+    // Add "updateNumers" requests routine (1000 ms)
     my_client->addHandler("updateNumbers", &my_functor_handle_updateNumbers);
     my_client->request("updateNumbers", 1000);
 
@@ -175,17 +162,27 @@ void robotManager::requestsHandler::handle_getSensorCurrent( ArNetPacket* packet
     if( std::string( sensorName ) == my_sensorsVector[0] )
     {
         // Assuming that laser is at [0]
-        std::map< int, std::pair<int, int> > reading_laser;
+
         for( int i = -(numberOfReadings - 1)/ 2; i <= (numberOfReadings - 1)/ 2; i++ )
         {
-            reading_laser[i] = std::make_pair( packet->bufToByte4(), packet->bufToByte4());
+            my_laserReading[i] = std::make_pair( packet->bufToByte4(), packet->bufToByte4());
         }
         if( my_verboseMode )
         {
-            printf("LASER READING (%d): (%6d, %6d)\n", 0, reading_laser[-(numberOfReadings - 1)/ 2].first, reading_laser[0].second);
+            printf("LASER READING (%d): (%6d, %6d)\n", 0, my_laserReading[-(numberOfReadings - 1)/ 2].first, my_laserReading[0].second);
             fflush(stdout);
         }
     }
+}
+
+std::vector<std::string> robotManager::requestsHandler::get_sensorsVector()
+{
+    return my_sensorsVector;
+}
+
+std::map< int, std::pair<int, int> > robotManager::requestsHandler::get_laserReading()
+{
+    return my_laserReading;
 }
 
 void robotManager::requestsHandler::enableVerboseMode()
@@ -437,10 +434,6 @@ robotManager::cameraManager::cameraManager( ArClientBase* _client, keyHandlerMas
     my_client->addHandler("getCameraInfoCamera_1", &my_functor_handle_getCameraInfoCamera_1);
     my_client->request("getCameraInfoCamera_1", 1000);
 
-    my_client->addHandler("getCameraDataCamera_1", &my_functor_hanlde_getCameraDataCamera_1);
-    my_client->request("getCameraDataCamera_1", 1000);
-
-//    handle_setCameraAbsCamera_1(1000, 1000, 0);
     resetPosition();
 }
 
@@ -500,8 +493,7 @@ void robotManager::cameraManager::handle_snapshot( ArNetPacket* packet )
     // Calculate how much should we read to obtain image
     my_video_mutexOn = true;
     my_lastSnapSize = (int) packet->getDataLength() - (int) packet->getDataReadLength();
-//    unsigned char image[toRead];
-//    packet->bufToData( image, toRead )
+
     // Set on the mutex so other functions know that my_lastSnap is under
     // maintenance.
     memset( my_lastSnap, 0, sizeof( my_lastSnap ));
@@ -588,7 +580,7 @@ void robotManager::cameraManager::resetPosition()
 
 void robotManager::cameraManager::recordFrame(unsigned char* image, int length_of_image)
 {
-//    Please be careful, this image is encoded in jpeg format
+    // Please be careful, this image is encoded in jpeg format
     std::ostringstream stream_converter;
     stream_converter << my_frame_number;
     std::string temp_string = stream_converter.str();
@@ -654,7 +646,6 @@ void robotManager::cameraManager::handle_key_w()
 {
     // UP by 5 degree
     handle_setCameraRelCamera_1(0, 5 * 100, 0);
-    printf("Lec w gore...");
     fflush(stdout);
 }
 

@@ -22,13 +22,13 @@
 		<Compiler>
 			<Add option="-Wall" />
 			<Add option="-fexceptions" />
-			<Add directory="/home/m/Pulpit/Aria/include" />
-			<Add directory="/home/m/Pulpit/Aria/ArNetworking/include" />
+			<Add directory="/usr/local/Aria/include" />
+			<Add directory="/usr/local/Aria/ArNetworking/include" />
 		</Compiler>
 		<Linker>
 			<Add library="Aria" />
 			<Add library="ArNetworking" />
-			<Add directory="/home/m/Pulpit/Aria/lib" />
+			<Add directory="/usr/local/Aria/lib" />
 		</Linker>
 		<Unit filename="main.cpp" />
 		<Unit filename="robotManager.cpp" />
@@ -40,6 +40,15 @@
 			<code_completion />
 			<debugger />
 			<lib_finder disable_auto="1" />
+			<DoxyBlocks>
+				<comment_style block="0" line="0" />
+				<doxyfile_project output_directory="docs" output_language="Polish" />
+				<doxyfile_build extract_all="1" />
+				<doxyfile_warnings />
+				<doxyfile_output latex="1" />
+				<doxyfile_dot class_diagrams="1" />
+				<general />
+			</DoxyBlocks>
 		</Extensions>
 	</Project>
 </CodeBlocks_project_file>
