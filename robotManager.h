@@ -492,7 +492,18 @@ private:
          *
          */
         void enableDistSteering();
-
+        /** \brief Atywacja sterowania za pomocą klawiatury
+         *
+         * \return void
+         *
+         */
+        void activateKeySteering();
+        /** \brief Wyłączenie sterowania za pomocą klawiatury
+         *
+         * \return void
+         *
+         */
+        void deactivateKeySteering();
         /** \brief Włącza wyświetlanie dodatkowych informacji
          *
          * \return void
@@ -502,51 +513,49 @@ private:
 
     private:
         bool my_verboseMode, my_keySteeringActiveStatus,
-             my_isRunningByKeys, my_isVelocitySteering;
+             my_isRunningByKeys, my_isVelocitySteering; /**< stany poszczególnych opcji */
 
-        const int VEL_PERC;
+        const int VEL_PERC;/**< limit wykorzystania mocy silników podany w procentach */
 
-        double my_velThrottle, my_rotThrottle;
+        double my_velThrottle, my_rotThrottle; /**< dane chwilowe potrzebne do sterowania prędkościowego */
 
-    protected:
-        ArClientBase* my_client;
-        keyHandlerMaster* my_keyHandler;
-        ArClientRatioDrive my_clientRatioDrive;
+    private:
+        ArClientBase* my_client;/**< wskaźnik do klienta Aria */
+        keyHandlerMaster* my_keyHandler;/**< wskaźnik do obiektu klasy \c robotManager::keyHandlerMaster */
+        ArClientRatioDrive my_clientRatioDrive;/**< wskaźnik do obiektu klasy \c ArClientRatioDrive */
 
-        void activateKeySteering(void);
-        void deactivateKeySteering(void);
 
-        void handle_jogModeRequests( int type, double value );
+        void handle_jogModeRequests( int type, double value );/**< \brief Wewnętrzna metoda do obsługi poleceń \c JogModeRequest */
 
         // CALLBACKS FUNCTIONS
-        void handle_key_up(void);
-        void handle_key_down(void);
-        void handle_key_left(void);
-        void handle_key_right(void);
-        void handle_key_space(void);
-        void callback_keySteeringCallback(void);
+        void handle_key_up(void);/**< callback do obsługi wciśnięcia strzałki w górę */
+        void handle_key_down(void);/**< callback do obsługi wciśnięcia strzałki w dół*/
+        void handle_key_left(void);/**< callback do obsługi wciśnięcia strzałki w lewo */
+        void handle_key_right(void);/**< callback do obsługi wciśnięcia strzałki w prawo */
+        void handle_key_space(void);/**< callback do obsługi wciśnięcia spacji */
+        void callback_keySteeringCallback(void);/**< callback do obsługi sterowania prędkościowego */
 
         // CALLBACKS FUNCTORS
-        ArFunctorC<steeringManager> my_functor_handle_key_up;
-        ArFunctorC<steeringManager> my_functor_handle_key_down;
-        ArFunctorC<steeringManager> my_functor_handle_key_left;
-        ArFunctorC<steeringManager> my_functor_handle_key_right;
-        ArFunctorC<steeringManager> my_functor_handle_key_space;
-        ArFunctorC<steeringManager> my_functor_callback_keySteeringCallback;
+        ArFunctorC<steeringManager> my_functor_handle_key_up;/**< functor do obsługi wciśnięcia strzałki w górę */
+        ArFunctorC<steeringManager> my_functor_handle_key_down;/**< functor do obsługi wciśnięcia strzałki w dół*/
+        ArFunctorC<steeringManager> my_functor_handle_key_left;/**< functor do obsługi wciśnięcia strzałki w lewo */
+        ArFunctorC<steeringManager> my_functor_handle_key_right;/**< functor do obsługi wciśnięcia strzałki w prawo */
+        ArFunctorC<steeringManager> my_functor_handle_key_space;/**< functor do obsługi wciśnięcia spacji */
+        ArFunctorC<steeringManager> my_functor_callback_keySteeringCallback;/**< functor do obsługi sterowania prędkościowego */
     };
 
 private:
-    ArArgumentParser parser;
-    ArClientBase client;
-    ArClientSimpleConnector clientConnector;
+    ArArgumentParser parser;/**< parser z biblioteki Aria */
+    ArClientBase client;/**< klient Aria */
+    ArClientSimpleConnector clientConnector;/**< obiekt pomocniczy z biblioteki Aria */
 
-    bool my_isClienRunning;
+    bool my_isClienRunning;/**< stan działania klienta */
 
 public:
-    requestsHandler* requests; /**< Ale jajaja */
-    steeringManager* steering; /**< No nie moge xD */
-    cameraManager* camera;
-    keyHandlerMaster* keyHandler;
+    requestsHandler* requests; /**< Wskaźnik do obiektu obsługującego \c pobieranie informacji dot. robota */
+    steeringManager* steering;/**< Wskaźnik do obiektu obsługującego \c sterowanie robota*/
+    cameraManager* camera;/**< Wskaźnik do obiektu obsługującego \c kamerę*/
+    keyHandlerMaster* keyHandler;/**< Wskaźnik do obiektu obsługującego \c klawiaturę*/
 };
 
 #endif // ROBOTMANAGER_H_INCLUDED

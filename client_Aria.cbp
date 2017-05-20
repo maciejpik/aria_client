@@ -24,11 +24,17 @@
 			<Add option="-fexceptions" />
 			<Add directory="/usr/local/Aria/include" />
 			<Add directory="/usr/local/Aria/ArNetworking/include" />
+			<Add directory="/usr/local/lib" />
 		</Compiler>
 		<Linker>
 			<Add library="Aria" />
 			<Add library="ArNetworking" />
+			<Add library="opencv_core" />
+			<Add library="opencv_imgproc" />
+			<Add library="opencv_highgui" />
+			<Add library="opencv_imgcodecs" />
 			<Add directory="/usr/local/Aria/lib" />
+			<Add directory="/usr/local/include/opencv2" />
 		</Linker>
 		<Unit filename="main.cpp" />
 		<Unit filename="robotManager.cpp" />

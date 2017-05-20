@@ -410,7 +410,7 @@ void robotManager::steeringManager::enableVerboseMode()
 }
 
 robotManager::cameraManager::cameraManager( ArClientBase* _client, keyHandlerMaster* _keyHandler ) :
-    my_sendVideoDelay( 100 ), my_video_mutexOn(true),
+    my_sendVideoDelay( 200 ), my_video_mutexOn(true),
     my_recordToFolder( false ), my_cameraSteeringActiveStatus( false ),
     my_client( _client ), my_keyHandler( _keyHandler ),
     my_functor_handle_getCameraList(this, &robotManager::cameraManager::handle_getCameraList),

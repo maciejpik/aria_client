@@ -11,11 +11,11 @@ AR = ar
 LD = g++
 WINDRES = windres
 
-INC = -I/usr/local/Aria/include -I/usr/local/Aria/ArNetworking/include
+INC = -I/usr/local/Aria/include -I/usr/local/Aria/ArNetworking/include -I/usr/local/lib
 CFLAGS = -Wall -fexceptions
 RESINC = 
-LIBDIR = -L/usr/local/Aria/lib
-LIB = -lAria -lArNetworking
+LIBDIR = -L/usr/local/Aria/lib -L/usr/local/include/opencv2
+LIB = -lAria -lArNetworking -lopencv_core -lopencv_imgproc -lopencv_highgui -lopencv_imgcodecs
 LDFLAGS = 
 
 INC_RELEASE = $(INC)

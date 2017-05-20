@@ -1347,7 +1347,7 @@
 	<string>
 	<sstream>
 
-1495219828 source:/home/maciejpik/Documents/programming/aria_client/main.cpp
+1495445523 source:/home/maciejpik/Documents/programming/aria_client/main.cpp
 	<iostream>
 	<stdexcept>
 	<string>
@@ -1355,8 +1355,12 @@
 	"robotManager.h"
 	<unistd.h>
 	<signal.h>
+	<opencv2/core/core.hpp>
+	<opencv2/imgproc/imgproc.hpp>
+	<opencv2/highgui/highgui.hpp>
+	<opencv2/imgcodecs.hpp>
 
-1495233654 /home/maciejpik/Documents/programming/aria_client/robotManager.h
+1495236015 /home/maciejpik/Documents/programming/aria_client/robotManager.h
 	"Aria.h"
 	"ArNetworking.h"
 	"ArClientRatioDrive.h"
@@ -2668,7 +2672,7 @@
 	"Aria.h"
 	"ArNetworking.h"
 
-1495229139 source:/home/maciejpik/Documents/programming/aria_client/robotManager.cpp
+1495445449 source:/home/maciejpik/Documents/programming/aria_client/robotManager.cpp
 	"robotManager.h"
 	<iostream>
 	<stdexcept>
